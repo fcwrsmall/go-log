@@ -1,5 +1,7 @@
 package log
 
+import "time"
+
 type ILog interface {
 	Debug(args ...any)
 	Debugf(format string, args ...any)
@@ -19,7 +21,17 @@ var (
 	logger   ILog
 )
 
+func init() {
+	go func() {
+		time.Sleep(time.Second)
+		DefaultLog("./logs", "debug")
+	}()
+}
+
 func DefaultLog(logPath string, level string) {
+	if default_ != nil {
+		return
+	}
 	default_ = defaultLog(logPath, level)
 	logger = default_
 }
