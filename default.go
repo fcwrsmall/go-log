@@ -43,10 +43,23 @@ func (w *timeBasedWriteSyncer) Write(p []byte) (n int, err error) {
 	// 如果小时变化了，清空server.log
 	if w.currentHour != currentHour {
 		w.currentHour = currentHour
-		// 关闭并重新创建server.log
-		w.serverLog.Close()
+		// 关闭现有的server.log
+		if w.serverLog != nil {
+			w.serverLog.Close()
+		}
+
+		// 清空server.log文件内容
+		serverLogPath := filepath.Join(w.basePath, "server.log")
+		if err := os.Truncate(serverLogPath, 0); err != nil {
+			// 如果文件不存在，忽略错误
+			if !os.IsNotExist(err) {
+				fmt.Printf("Warning: failed to truncate server.log: %v\n", err)
+			}
+		}
+
+		// 重新创建server.log
 		w.serverLog = &lumberjack.Logger{
-			Filename:   filepath.Join(w.basePath, "server.log"),
+			Filename:   serverLogPath,
 			MaxSize:    1000, // MB
 			MaxBackups: 1,    // 只保留当前文件
 			MaxAge:     1,    // 保留1小时
